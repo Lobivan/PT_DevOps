@@ -1,7 +1,7 @@
 from telegram import Update, ForceReply
 import logging
 import re
-from telegram.ext import ConversationHandler
+from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
 
 # Поиск номеров телефонов
 def findPhoneNumberCommand(update: Update, context):
@@ -24,6 +24,16 @@ def findPhoneNumber (update: Update, context):
     logging.debug('Поиск номеров закончился')
     return ConversationHandler.END
 
+def getPhoneNumberHandler(command = 'find_phone_number'):
+    return ConversationHandler(
+        entry_points=[CommandHandler(command, findPhoneNumberCommand)],
+        states={
+            'findPhoneNumber': [MessageHandler(Filters.text & ~Filters.command, findPhoneNumber)],
+        },
+        fallbacks=[]
+    )
+
+
 # Поиск электронной почты
 def findEmailCommand(update: Update, context):
     logging.debug('Получена команда поиска почты')
@@ -44,3 +54,12 @@ def findEmail (update: Update, context):
     update.message.reply_text(email)
     logging.debug('Поиск почты закончился')
     return ConversationHandler.END
+
+def getEmailHandler(command = 'find_email'):
+    return ConversationHandler(
+        entry_points=[CommandHandler(command, findEmailCommand)],
+        states={
+            'findEmail': [MessageHandler(Filters.text & ~Filters.command, findEmail)],
+        },
+        fallbacks=[]
+    )

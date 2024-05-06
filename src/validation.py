@@ -1,7 +1,7 @@
-from telegram import Update, ForceReply
+from telegram import Update
 import logging
 import re
-from telegram.ext import ConversationHandler
+from telegram.ext import CommandHandler, MessageHandler, Filters, ConversationHandler
 
 # Проверка сложности пароля
 def verifyPasswordCommand(update: Update, context):
@@ -22,3 +22,12 @@ def verifyPassword (update: Update, context):
 
     logging.debug('Проверка сложности пароля закончилась')
     return ConversationHandler.END
+
+def getHandler(command = 'verify_password'):
+    return ConversationHandler(
+        entry_points=[CommandHandler(command, verifyPasswordCommand)],
+        states={
+            'verifyPassword': [MessageHandler(Filters.text & ~Filters.command, verifyPassword)],
+        },
+        fallbacks=[]
+    )

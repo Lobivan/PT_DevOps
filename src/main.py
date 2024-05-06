@@ -1,8 +1,7 @@
 import os
 from dotenv import load_dotenv
 import logging
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram.ext import Updater
 
 import search_info
 import validation
@@ -24,33 +23,15 @@ def main():
     dp = updater.dispatcher
 
     # Проверка сложности пароля
-    convHandlerValidatePass = ConversationHandler(
-        entry_points=[CommandHandler('verify_password', validation.verifyPasswordCommand)],
-        states={
-            'verifyPassword': [MessageHandler(Filters.text & ~Filters.command, validation.verifyPassword)],
-        },
-        fallbacks=[]
-    )
+    convHandlerValidatePass = validation.getHandler()
     dp.add_handler(convHandlerValidatePass)
 
     # Поиск электронной почты
-    convHandlerFindEmail = ConversationHandler(
-        entry_points=[CommandHandler('find_email', search_info.findEmailCommand)],
-        states={
-            'findEmail': [MessageHandler(Filters.text & ~Filters.command, search_info.findEmail)],
-        },
-        fallbacks=[]
-    )
+    convHandlerFindEmail = search_info.getEmailHandler()
     dp.add_handler(convHandlerFindEmail)
 
     # Поиск номеров телефонов
-    convHandlerFindPhoneNumber = ConversationHandler(
-        entry_points=[CommandHandler('find_phone_number', search_info.findPhoneNumberCommand)],
-        states={
-            'findPhoneNumber': [MessageHandler(Filters.text & ~Filters.command, search_info.findPhoneNumber)],
-        },
-        fallbacks=[]
-    )
+    convHandlerFindPhoneNumber = search_info.getPhoneNumberHandler()
     dp.add_handler(convHandlerFindPhoneNumber)
 
     updater.start_polling()
