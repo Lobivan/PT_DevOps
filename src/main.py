@@ -1,10 +1,11 @@
 import os
 from dotenv import load_dotenv
 import logging
-from telegram.ext import Updater
+from telegram.ext import Updater, CommandHandler
 
 import search_info
 import validation
+import linux_monitoring
 
 logging.basicConfig(
     level=logging.DEBUG, filename='logfile.txt', encoding="utf-8", filemode='w', 
@@ -33,6 +34,25 @@ def main():
     # Поиск номеров телефонов
     convHandlerFindPhoneNumber = search_info.getPhoneNumberHandler()
     dp.add_handler(convHandlerFindPhoneNumber)
+
+    # Мониторинг Linux-системы
+    dp.add_handler(CommandHandler('get_release', linux_monitoring.getReleaseCommand))
+    dp.add_handler(CommandHandler('get_uname', linux_monitoring.getUnameCommand))
+    dp.add_handler(CommandHandler('get_uptime', linux_monitoring.getUptimeCommand))
+    dp.add_handler(CommandHandler('get_df', linux_monitoring.getDfCommand))
+    dp.add_handler(CommandHandler('get_free', linux_monitoring.getFreeCommand))
+    dp.add_handler(CommandHandler('get_mpstat', linux_monitoring.getMpstatCommand))
+    dp.add_handler(CommandHandler('get_w', linux_monitoring.getWCommand))
+    dp.add_handler(CommandHandler('get_auths', linux_monitoring.getAuthsCommand))
+    dp.add_handler(CommandHandler('get_critical', linux_monitoring.getCriticalCommand))
+    dp.add_handler(CommandHandler('get_ps', linux_monitoring.getPsCommand))
+    dp.add_handler(CommandHandler('get_ss', linux_monitoring.getSsCommand))
+    
+    convHandlerAptList = linux_monitoring.getAptListHandler()
+    dp.add_handler(convHandlerAptList)
+    
+    dp.add_handler(CommandHandler('get_services', linux_monitoring.getServicesCommand))
+
 
     updater.start_polling()
     updater.idle()
