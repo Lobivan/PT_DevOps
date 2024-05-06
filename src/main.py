@@ -5,6 +5,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
 import search_info
+import validation
 
 logging.basicConfig(
     level=logging.DEBUG, filename='logfile.txt', encoding="utf-8", filemode='w', 
@@ -21,6 +22,16 @@ def main():
     logging.debug('Запуск бота')
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
+
+    # Проверка сложности пароля
+    convHandlerValidatePass = ConversationHandler(
+        entry_points=[CommandHandler('verify_password', validation.verifyPasswordCommand)],
+        states={
+            'verifyPassword': [MessageHandler(Filters.text & ~Filters.command, validation.verifyPassword)],
+        },
+        fallbacks=[]
+    )
+    dp.add_handler(convHandlerValidatePass)
 
     # Поиск электронной почты
     convHandlerFindEmail = ConversationHandler(
