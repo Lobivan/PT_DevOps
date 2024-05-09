@@ -7,10 +7,10 @@ import logging
 from dotenv import load_dotenv
 
 load_dotenv()
-host = os.getenv('HOST')
+host = os.getenv('DB_HOST')
 port = os.getenv('PORT')
-username = os.getenv('USER')
-password = os.getenv('PASSWORD')
+username = os.getenv('DB_USER')
+password = os.getenv('DB_PASS')
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -133,3 +133,13 @@ def getServicesCommand(update: Update, context):
     else:
         update.message.reply_text(data)
     logging.debug('Сбор информации о запущенных сервисах закончился')
+
+def getReplLogsCommand(update: Update, context):
+    logging.debug('Сбор логов о репликации начался')
+    data = execCommand('cat /var/log/postgresql/postgresql-14-main.log | tail -n10')
+    if len(data) > 4096:
+        for x in range(0, len(data), 4096):
+            update.message.reply_text(data[x:x+4096])
+    else:
+        update.message.reply_text(data)
+    logging.debug('Сбор логов о репликации закончился')

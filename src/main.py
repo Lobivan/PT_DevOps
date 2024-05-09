@@ -6,6 +6,7 @@ from telegram.ext import Updater, CommandHandler
 import search_info
 import validation
 import linux_monitoring
+import db_commands
 
 logging.basicConfig(
     level=logging.DEBUG, filename='logfile.txt', encoding="utf-8", filemode='w', 
@@ -47,11 +48,17 @@ def main():
     dp.add_handler(CommandHandler('get_critical', linux_monitoring.getCriticalCommand))
     dp.add_handler(CommandHandler('get_ps', linux_monitoring.getPsCommand))
     dp.add_handler(CommandHandler('get_ss', linux_monitoring.getSsCommand))
+    dp.add_handler(CommandHandler('get_repl_logs', linux_monitoring.getReplLogsCommand))
+    dp.add_handler(CommandHandler('get_services', linux_monitoring.getServicesCommand))
     
     convHandlerAptList = linux_monitoring.getAptListHandler()
     dp.add_handler(convHandlerAptList)
+
+    # Работа с БД
+    dp.add_handler(CommandHandler('get_emails', db_commands.getEmailsCommand))
+    dp.add_handler(CommandHandler('get_phone_numbers', db_commands.getPhonesCommand))
+
     
-    dp.add_handler(CommandHandler('get_services', linux_monitoring.getServicesCommand))
 
 
     updater.start_polling()
