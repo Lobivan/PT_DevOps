@@ -136,7 +136,7 @@ def getServicesCommand(update: Update, context):
 
 def getReplLogsCommand(update: Update, context):
     logging.debug('Сбор логов о репликации начался')
-    data = execCommand('cat /var/log/postgresql/postgresql-14-main.log | tail -n10')
+    data = execCommand('ls /var/log/postgresql/ | tail -n10')
     if len(data) > 4096:
         for x in range(0, len(data), 4096):
             update.message.reply_text(data[x:x+4096])
