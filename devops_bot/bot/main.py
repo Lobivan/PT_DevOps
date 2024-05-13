@@ -16,7 +16,7 @@ logging.basicConfig(
 
 logging.debug('Получение токена бота')
 load_dotenv()
-TOKEN = os.getenv('BOT_TOKEN')
+TOKEN = os.getenv('TOKEN')
 logging.debug('Токен получен: '+ TOKEN[:5] + '...' + TOKEN[-5:])
 
 def main():

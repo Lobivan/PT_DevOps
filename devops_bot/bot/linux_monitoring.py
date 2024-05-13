@@ -7,10 +7,10 @@ import logging
 from dotenv import load_dotenv
 
 load_dotenv()
-host = os.getenv('DB_HOST')
-port = os.getenv('PORT')
-username = os.getenv('DB_USER')
-password = os.getenv('DB_PASS')
+host = os.getenv('RM_HOST')
+port = os.getenv('RM_PORT')
+username = os.getenv('RM_USER')
+password = os.getenv('RM_PASSWORD')
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
