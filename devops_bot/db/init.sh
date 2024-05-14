@@ -22,7 +22,3 @@ psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
 psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_DATABASE TO $DB_USER;"
 psql -d $DB_DATABASE -c "ALTER TABLE email OWNER TO $DB_USER;"
 psql -d $DB_DATABASE -c "ALTER TABLE phones OWNER TO $DB_USER;"
-
-#DB_BIN_PATH=`pg_config --bindir`
-#DB_DATA_PATH=`psql -U postgres --no-align --quiet --tuples-only --command='SHOW data_directory'`
-#/$DB_BIN_PATH/pg_ctl restart -D $DB_DATA_PATH
