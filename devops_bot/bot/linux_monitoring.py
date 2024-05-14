@@ -134,12 +134,3 @@ def getServicesCommand(update: Update, context):
         update.message.reply_text(data)
     logging.debug('Сбор информации о запущенных сервисах закончился')
 
-def getReplLogsCommand(update: Update, context):
-    logging.debug('Сбор логов о репликации начался')
-    data = execCommand('docker logs -n 10 myvol')
-    if len(data) > 4096:
-        for x in range(0, len(data), 4096):
-            update.message.reply_text(data[x:x+4096])
-    else:
-        update.message.reply_text(data)
-    logging.debug('Сбор логов о репликации закончился')
