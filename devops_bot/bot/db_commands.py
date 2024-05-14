@@ -77,3 +77,14 @@ def getEmailsCommand(update: Update, context):
         res += line + '\n'
     update.message.reply_text(res)
     logging.debug('Сбор email-адресов закончился')
+
+def getReplLogsCommand(update: Update, context):
+    logging.debug('Сбор логов о репликации начался')
+
+    data = runQueryWithReturn('SELECT pg_read_file(pg_current_logfile());')
+    if len(data) > 4096:
+        for x in range(0, len(data), 4096):
+            update.message.reply_text(data[x:x+4096])
+    else:
+        update.message.reply_text(data)
+    logging.debug('Сбор логов о репликации закончился')
