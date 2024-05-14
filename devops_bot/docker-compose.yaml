@@ -1,22 +1,14 @@
-version: "3"
 services:
   bot:
     image: bot_image
     build: ./bot
     container_name: bot-image
-    environment:
-      - TOKEN=${TOKEN}
-      - RM_HOST=${RM_HOST}
-      - RM_PORT=${RM_PORT}
-      - RM_USER=${RM_USER}
-      - RM_PASSWORD=${RM_PASSWORD}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_DATABASE=${DB_DATABASE}
+    env_file:
+      - .env
     depends_on:
       - db
+    networks:
+      - mynet
 
   db:
     image: db_image
@@ -24,22 +16,14 @@ services:
     container_name: db-image
     ports:
       - "${DB_PORT}:5432"
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - DB_PORT=${DB_PORT}
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_REPL_USER=${DB_REPL_USER}
-      - DB_REPL_PASSWORD=${DB_REPL_PASSWORD}
-      - DB_REPL_HOST=${DB_REPL_HOST}
-    command: |
-      postgres
-      -c archive_mode=on
-      -c archive_command='cp %p /oracle/pg_data/archive/%f'
-      -c max_wal_senders=10
-      -c wal_level=replica
-      -c wal_log_hints=on
-      -c log_replication_commands=on
-      -c listen_addresses=*
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - mynet
 
+networks:
+  mynet:
+    driver: bridge
 
