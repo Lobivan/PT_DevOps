@@ -1,13 +1,14 @@
 import os
-from dotenv import load_dotenv
+import re
 import logging
 import paramiko
-from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, CallbackContext
-from functools import partial
+from telegram.ext import Updater, CommandHandler, Filters, ConversationHandler, CallbackContext, MessageHandler
 from telegram import Update
+from functools import partial
+from dotenv import load_dotenv
 
 import search_info
-import validation
+# import validation
 import db_commands
 
 logging.basicConfig(
@@ -20,7 +21,33 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 logging.debug('Токен получен: '+ TOKEN[:5] + '...' + TOKEN[-5:])
 
+
+
+
+
+# --------------------------------- Проверка сложности пароля ---------------------------------
+
+def verifyPasswordCommand(update: Update, context):
+    logging.debug('Получена команда проверки сложности пароля')
+    update.message.reply_text('Введите пароль: ')
+    return 'verifyPassword'
+
+def verifyPassword (update: Update, context):
+    logging.debug('Проверка сложности пароля началась')
+    user_input = update.message.text
+    passRegex = re.compile(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()]).{8,}$')
+    passStrong = passRegex.findall(user_input)
+
+    if not passStrong:
+        update.message.reply_text('Пароль простой')
+    else:
+        update.message.reply_text('Пароль сложный')
+
+    logging.debug('Проверка сложности пароля закончилась')
+    return ConversationHandler.END
+
 # --------------------------------- Мониторинг удалённой системы линукс ---------------------------------
+
 rm_host = os.getenv('RM_HOST')
 rm_port = os.getenv('RM_PORT')
 rm_username = os.getenv('RM_USER')
@@ -62,7 +89,13 @@ def main():
     dp = updater.dispatcher
 
     # Проверка сложности пароля
-    convHandlerValidatePass = validation.getHandler()
+    convHandlerValidatePass = ConversationHandler(
+        entry_points=[CommandHandler('verify_password', verifyPasswordCommand)],
+        states={
+            'verifyPassword': [MessageHandler(Filters.text & ~Filters.command, verifyPassword)],
+        },
+        fallbacks=[]
+    )
     dp.add_handler(convHandlerValidatePass)
 
     # Поиск электронной почты
