@@ -304,7 +304,6 @@ def main():
     dp.add_handler(CommandHandler('get_emails', getEmailsCommand))
     dp.add_handler(CommandHandler('get_phone_numbers', getPhonesCommand))
 
-    
     updater.start_polling()
     updater.idle()
     logging.debug('Остановка бота')
