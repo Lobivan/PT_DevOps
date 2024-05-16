@@ -1,5 +1,0 @@
-      -c unix_socket_directories=/var/run/postgresql
-      -c hot_standby=on
-      -c max_replication_slots=10 
-      -c hot_standby_feedback=on
-      -c password_encryption=scram-sha-256
