@@ -92,6 +92,7 @@ def getEmailsCommand(update: Update, context):
 def getReplLogsCommand(update: Update, context):
     logging.debug('Сбор логов о репликации начался')
     data = runQueryWithReturn('SELECT pg_read_file(pg_current_logfile());')
+    data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     for x in range(0, len(data), 4096):
         update.message.reply_text(data[x:x+4096])
     logging.debug('Сбор логов о репликации закончился')
