@@ -232,6 +232,7 @@ def getAptListOnRmHost(update: Update, context: CallbackContext):
     return data
 
 def execCommandOnRmHost(update: Update, context, command):
+    logging.debug('Выполнение команды \"' + str(command) + '\" на удалённом хосте началось')
     client.connect(hostname=rm_host, username=rm_username, password=rm_password, port=rm_port)
     stdin, stdout, stderr = client.exec_command(command)
     data = stdout.read() + stderr.read()
@@ -239,6 +240,7 @@ def execCommandOnRmHost(update: Update, context, command):
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     for x in range(0, len(data), 4096):
         update.message.reply_text(data[x:x+4096])
+    logging.debug('Выполнение команды \"' + str(command) + '\" на удалённом хосте завершено')
     return data
 
 # --------------------------------- main ---------------------------------
