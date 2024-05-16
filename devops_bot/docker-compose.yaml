@@ -13,7 +13,7 @@ services:
   db:
     image: db_image
     build: ./db
-    container_name: db-image
+    container_name: ${DB_HOST}
     ports:
       - "${DB_PORT}:5432"
     env_file:
@@ -22,12 +22,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     networks:
       mynet:
-        ipv4_address: ${DB_HOST}
 
   db_repl:
     image: db_repl_image
     build: ./db_repl
-    container_name: db-repl-image
+    container_name: ${DB_REPL_HOST}
     env_file:
       - .env
     depends_on:
@@ -36,12 +35,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     networks:
       mynet:
-        ipv4_address: ${DB_REPL_HOST}
 
 networks:
   mynet:
     driver: bridge
-    ipam:
-      config:
-        - subnet: ${DOCKER_SUBNET}
 
