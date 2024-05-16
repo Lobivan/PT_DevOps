@@ -1,0 +1,2 @@
+db_host ansible_host=192.168.88.244 ansible_user=lobivan ansible_password=123
+db_repl_host ansible_host=192.168.88.247 ansible_user=lobivan ansible_password=123

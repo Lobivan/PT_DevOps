@@ -1,0 +1,33 @@
+- name: configure db_host
+  hosts: db_host
+  gather_facts: false
+  become: yes
+  tasks:
+    - name: get packages
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+          - python3
+          - python3-pip
+          - git
+        state: latest
+    - name: install python requirements
+      pip:
+        name:
+          - python-telegram-bot==13.7
+          - paramiko
+          - psycopg2-binary
+          - python-dotenv
+    - name: clone bot from git
+      git:
+        repo: https://github.com/Lobivan/START.git
+        dest: /tmp/pt_bot
+        force: yes
+    - name: move .env to bot
+      copy:
+        src: .env
+        dest: /tmp/pt_bot
+        mode: 0777
+    - name: run bot
+      shell: python3 /tmp/pt_bot/bot.py
