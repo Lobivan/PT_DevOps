@@ -216,6 +216,7 @@ client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 def getAptListOnRmHost(update: Update, context: CallbackContext):
+    logging.debug('Выполнение команды \"apt list\" на удалённом хосте началось')
     client.connect(hostname=rm_host, username=rm_username, password=rm_password, port=rm_port)
     if len(context.args) > 0:
         stdin, stdout, stderr = client.exec_command('apt list --installed | grep \"' + context.args[0] + '\"')
@@ -229,6 +230,7 @@ def getAptListOnRmHost(update: Update, context: CallbackContext):
         update.message.reply_text(data[x:x+4096])
     if len(context.args) == 0:
         update.message.reply_text('Для получения информации о конкретных пакетах введите \"/get_apt_list ИМЯ_ПАКЕТА\"')
+    logging.debug('Выполнение команды \"apt list\" на удалённом хосте завершено')
     return data
 
 def execCommandOnRmHost(update: Update, context, command):
