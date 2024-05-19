@@ -12,7 +12,7 @@ sed -i "s/^#*\(logging_collector *= *\).*/\1on/" $CONFIG_FILE_DB
 
 HBA_FILE_DB=`psql -U postgres --no-align --quiet --tuples-only --command='SHOW hba_file'`
 
-echo "host all all 0.0.0.0/0 trust" >> $HBA_FILE_DB
+echo "host all all bot trust" >> $HBA_FILE_DB
 echo "host replication $DB_REPL_USER 0.0.0.0/0 trust" >> $HBA_FILE_DB
 
 psql -c "CREATE USER $DB_REPL_USER WITH REPLICATION LOGIN PASSWORD '$DB_REPL_PASSWORD';"
