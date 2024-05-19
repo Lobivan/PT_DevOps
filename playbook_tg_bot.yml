@@ -1,17 +1,84 @@
-- name: configure db_host
+- name: configure and run db
   hosts: db_host
   gather_facts: false
   become: yes
+  vars:
+    archive_dir: "/oracle/pg_data/archive/"
   tasks:
     - name: get packages
       apt:
         name:
           - postgresql
           - postgresql-contrib
+        state: latest
+
+    - name: Create archive directory
+      file:
+        path: "{{archive_dir}}"
+        state: directory
+        owner: "postgres"
+        mode: 0750
+      become: yes
+
+    - name: Get db config file
+      shell: "pg_lsclusters --json | jq '.[].configdir' | awk '{gsub(/\"/, \"\", $1); print $1}'"
+      register: config_file_db
+
+    - name: Setup postgresql.conf
+      blockinfile:
+        path: "/etc/postgresql/14/main/postgresql.conf"
+        block: | 
+          archive_mode = on
+          archive_command = 'cp %p {{archive_dir}}%f'
+          max_wal_senders = 10
+          wal_level = replica
+          wal_log_hints = on
+          log_replication_commands = on
+          logging_collector = on
+          listen_addresses = '*'
+
+    - name: Get db hba file
+      shell: "pg_lsclusters --json | jq '.[].config.hba_file' | awk '{gsub(/\"/, \"\", $1); print $1}'"
+      register: hba_file_db
+
+    - name: Setup pg_hba.conf
+      blockinfile:
+        path: "/etc/postgresql/14/main/pg_hba.conf"
+        block: | 
+            host all all 0.0.0.0/0 trust
+            host replication {{env.DB_REPL_USER}} 0.0.0.0/0 trust
+
+    - name: configure psql db
+      become: true
+      become_user: postgres
+      shell: | 
+        echo "SELECT 'CREATE DATABASE {{env.DB_DATABASE}}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{{env.DB_DATABASE}}')\gexec" | psql
+        echo "SELECT 'CREATE USER {{env.DB_REPL_USER}}' WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{env.DB_REPL_USER}}')\gexec" | psql
+        psql -d {{env.DB_DATABASE}} -c "CREATE TABLE IF NOT EXISTS phones (id SERIAL PRIMARY KEY, number VARCHAR(100) NOT NULL);"
+        psql -d {{env.DB_DATABASE}} -c "CREATE TABLE IF NOT EXISTS email (id SERIAL PRIMARY KEY, address VARCHAR(100) NOT NULL);"
+        echo "SELECT 'CREATE USER {{env.DB_USER}}' WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{env.DB_USER}}')\gexec" | psql
+        psql -c "GRANT ALL PRIVILEGES ON DATABASE {{env.DB_DATABASE}} TO {{env.DB_USER}};"
+        psql -d {{env.DB_DATABASE}} -c "ALTER TABLE email OWNER TO {{env.DB_USER}};"
+        psql -d {{env.DB_DATABASE}} -c "ALTER TABLE phones OWNER TO {{env.DB_USER}};"
+    - name: restart postgresql
+      service:
+        name: postgresql
+        state: restarted
+
+- name: configure and run bot
+  hosts: bot_host
+  gather_facts: false
+  become: yes
+  tasks:
+
+    - name: get packages
+      apt:
+        name:
           - python3
           - python3-pip
           - git
         state: latest
+
     - name: install python requirements
       pip:
         name:
@@ -19,15 +86,23 @@
           - paramiko
           - psycopg2-binary
           - python-dotenv
+
     - name: clone bot from git
       git:
         repo: https://github.com/Lobivan/START.git
         dest: /tmp/pt_bot
         force: yes
-    - name: move .env to bot
-      copy:
-        src: .env
-        dest: /tmp/pt_bot
-        mode: 0777
+
     - name: run bot
       shell: python3 /tmp/pt_bot/bot.py
+      environment:
+        TOKEN: "{{env.TOKEN}}"
+        RM_HOST: "{{env.RM_HOST}}"
+        RM_PORT: "{{env.RM_PORT}}"
+        RM_USER: "{{env.RM_USER}}"
+        RM_PASSWORD: "{{env.RM_PASSWORD}}"
+        DB_USER: "{{env.DB_USER}}"
+        DB_PASSWORD: "{{env.DB_PASSWORD}}"
+        DB_HOST: "{{ans_hosts.db.host}}"
+        DB_PORT: "{{env.DB_PORT}}"
+        DB_DATABASE: "{{env.DB_DATABASE}}"
