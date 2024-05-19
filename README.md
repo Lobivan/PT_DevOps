@@ -3,7 +3,7 @@ PT Start Модуль 5 - DevOps
 
 # Пример файла .env:
 ```
-TOKEN = 6378396539:AAFhU3mMG0P10RLx8bRNQz01jl68s0VUIUY
+TOKEN =
 RM_HOST = 192.168.88.247
 RM_PORT = 22
 RM_USER = lobivan
