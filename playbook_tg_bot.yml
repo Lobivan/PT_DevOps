@@ -5,6 +5,7 @@
   vars:
     archive_dir: "/oracle/pg_data/archive/"
   tasks:
+
     - name: get packages
       apt:
         name:
@@ -20,10 +21,6 @@
         mode: 0750
       become: yes
 
-    - name: Get db config file
-      shell: "pg_lsclusters --json | jq '.[].configdir' | awk '{gsub(/\"/, \"\", $1); print $1}'"
-      register: config_file_db
-
     - name: Setup postgresql.conf
       blockinfile:
         path: "/etc/postgresql/14/main/postgresql.conf"
@@ -37,15 +34,11 @@
           logging_collector = on
           listen_addresses = '*'
 
-    - name: Get db hba file
-      shell: "pg_lsclusters --json | jq '.[].config.hba_file' | awk '{gsub(/\"/, \"\", $1); print $1}'"
-      register: hba_file_db
-
     - name: Setup pg_hba.conf
       blockinfile:
         path: "/etc/postgresql/14/main/pg_hba.conf"
         block: | 
-            host all all 0.0.0.0/0 trust
+            host all all {{ans_hosts.bot.host}}/32 trust
             host replication {{env.DB_REPL_USER}} 0.0.0.0/0 trust
 
     - name: configure psql db
@@ -60,6 +53,39 @@
         psql -c "GRANT ALL PRIVILEGES ON DATABASE {{env.DB_DATABASE}} TO {{env.DB_USER}};"
         psql -d {{env.DB_DATABASE}} -c "ALTER TABLE email OWNER TO {{env.DB_USER}};"
         psql -d {{env.DB_DATABASE}} -c "ALTER TABLE phones OWNER TO {{env.DB_USER}};"
+
+    - name: restart postgresql
+      service:
+        name: postgresql
+        state: restarted
+
+- name: configure and run db_repl
+  hosts: db_repl_host
+  gather_facts: false
+  become: yes
+  tasks:
+
+    - name: get packages
+      apt:
+        name:
+          - postgresql
+          - postgresql-contrib
+        state: latest
+
+    - name: Setup postgresql.conf
+      blockinfile:
+        path: "/etc/postgresql/14/main/postgresql.conf"
+        block: | 
+          listen_addresses = '*'
+
+    - name: rm db data
+      command: rm -rf /var/lib/postgresql/14/main/
+  
+    - name: pg_basebackup
+      command: pg_basebackup -R -h {{ans_hosts.db.host}} -U {{env.DB_REPL_USER}} -D /var/lib/postgresql/14/main/ -P
+      environment: 
+        PGPASSWORD: "{{env.DB_REPL_PASSWORD}}"
+
     - name: restart postgresql
       service:
         name: postgresql
