@@ -2,8 +2,6 @@
   hosts: db_host
   gather_facts: false
   become: yes
-  vars:
-    archive_dir: "/oracle/pg_data/archive/"
   tasks:
 
     - name: get packages
@@ -15,7 +13,7 @@
 
     - name: Create archive directory
       file:
-        path: "{{archive_dir}}"
+        path: "{{other.archive_dir}}"
         state: directory
         owner: "postgres"
         mode: 0750
@@ -23,10 +21,10 @@
 
     - name: Setup postgresql.conf
       blockinfile:
-        path: "/etc/postgresql/14/main/postgresql.conf"
+        path: "/etc/postgresql/{{other.pg_version}}/main/postgresql.conf"
         block: | 
           archive_mode = on
-          archive_command = 'cp %p {{archive_dir}}%f'
+          archive_command = 'cp %p {{other.archive_dir}}%f'
           max_wal_senders = 10
           wal_level = replica
           wal_log_hints = on
@@ -36,20 +34,38 @@
 
     - name: Setup pg_hba.conf
       blockinfile:
-        path: "/etc/postgresql/14/main/pg_hba.conf"
+        path: "/etc/postgresql/{{other.pg_version}}/main/pg_hba.conf"
         block: | 
             host all all {{ans_hosts.bot.host}}/32 trust
-            host replication {{env.DB_REPL_USER}} 0.0.0.0/0 trust
+            host replication {{env.DB_REPL_USER}} {{ans_hosts.db_repl.host}}/32 trust
+
+    - name: Install psycopg
+      pip:
+        name: psycopg2-binary
+
+    - name: create db_user
+      become: true
+      become_user: postgres
+      postgresql_user:
+        name: "{{env.DB_USER}}"
+        password: "{{env.DB_PASSWORD}}"
+        role_attr_flags: LOGIN
+
+    - name: create repl_user
+      become: true
+      become_user: postgres
+      postgresql_user:
+        name: "{{env.DB_REPL_USER}}"
+        password: "{{env.DB_REPL_PASSWORD}}"
+        role_attr_flags: REPLICATION,LOGIN
 
     - name: configure psql db
       become: true
       become_user: postgres
       shell: | 
         echo "SELECT 'CREATE DATABASE {{env.DB_DATABASE}}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{{env.DB_DATABASE}}')\gexec" | psql
-        echo "SELECT 'CREATE USER {{env.DB_REPL_USER}}' WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{env.DB_REPL_USER}}')\gexec" | psql
         psql -d {{env.DB_DATABASE}} -c "CREATE TABLE IF NOT EXISTS phones (id SERIAL PRIMARY KEY, number VARCHAR(100) NOT NULL);"
         psql -d {{env.DB_DATABASE}} -c "CREATE TABLE IF NOT EXISTS email (id SERIAL PRIMARY KEY, address VARCHAR(100) NOT NULL);"
-        echo "SELECT 'CREATE USER {{env.DB_USER}}' WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '{{env.DB_USER}}')\gexec" | psql
         psql -c "GRANT ALL PRIVILEGES ON DATABASE {{env.DB_DATABASE}} TO {{env.DB_USER}};"
         psql -d {{env.DB_DATABASE}} -c "ALTER TABLE email OWNER TO {{env.DB_USER}};"
         psql -d {{env.DB_DATABASE}} -c "ALTER TABLE phones OWNER TO {{env.DB_USER}};"
@@ -74,15 +90,15 @@
 
     - name: Setup postgresql.conf
       blockinfile:
-        path: "/etc/postgresql/14/main/postgresql.conf"
+        path: "/etc/postgresql/{{other.pg_version}}/main/postgresql.conf"
         block: | 
           listen_addresses = '*'
 
     - name: rm db data
-      command: rm -rf /var/lib/postgresql/14/main/
+      command: rm -rf /var/lib/postgresql/{{other.pg_version}}/main/
   
     - name: pg_basebackup
-      command: pg_basebackup -R -h {{ans_hosts.db.host}} -U {{env.DB_REPL_USER}} -D /var/lib/postgresql/14/main/ -P
+      command: pg_basebackup -R -h {{ans_hosts.db.host}} -U {{env.DB_REPL_USER}} -D /var/lib/postgresql/{{other.pg_version}}/main/ -P
       environment: 
         PGPASSWORD: "{{env.DB_REPL_PASSWORD}}"
 
